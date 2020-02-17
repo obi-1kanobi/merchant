@@ -1,6 +1,13 @@
 package com.merchant.offer.domain;
 
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
+
+@XmlRootElement(name = "offer")
+@XmlAccessorType(XmlAccessType.FIELD)
 
 public class Offer {
 
@@ -8,7 +15,9 @@ public class Offer {
     String  offerName;
     String  offerDescription;
     String  offerCurrency;
-    Date    offerExpiration;
-    Boolean offerValid;
+    String  comment;
+    int     offerDuration;
+    String  timeTillExpiration;
+    Boolean offerExpired;
 
 }
