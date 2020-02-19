@@ -1,6 +1,9 @@
 package com.merchant.offer.domain;
 
 
+import com.merchant.util.OfferUtils;
+
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -10,25 +13,34 @@ import java.util.Date;
 @XmlAccessorType(XmlAccessType.FIELD)
 
 public class Offer {
-
     String  offerId;
     String  offerName;
     String  offerDescription;
     String  offerCurrency;
     String  comment;
     int     offerDuration;
-    String  timeTillExpiration;
+    String  offerExpirationDate;
     Boolean offerExpired;
+    String    offerCreatedOn;
 
-    public Date getExpiredOn() {
-        return expiredOn;
+    public String getOfferExpirationDate() {
+        return offerExpirationDate;
     }
 
-    public void setExpiredOn(Date expiredOn) {
-        this.expiredOn = expiredOn;
+    public void setOfferExpirationDate(String offerExpirationDate) {
+        this.offerExpirationDate = offerExpirationDate;
     }
 
-    Date    expiredOn;
+
+    public String getOfferCreatedOn() {
+
+        return offerCreatedOn;
+    }
+
+    public void setOfferCreatedOn(String offerCreatedOn) {
+        this.offerCreatedOn = offerCreatedOn;
+    }
+
 
     public String getOfferId() {
         return offerId;
@@ -78,13 +90,6 @@ public class Offer {
         this.offerDuration = offerDuration;
     }
 
-    public String getTimeTillExpiration() {
-        return timeTillExpiration;
-    }
-
-    public void setTimeTillExpiration(String timeTillExpiration) {
-        this.timeTillExpiration = timeTillExpiration;
-    }
 
     public Boolean getOfferExpired() {
         return offerExpired;

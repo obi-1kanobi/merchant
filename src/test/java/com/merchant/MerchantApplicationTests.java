@@ -3,6 +3,7 @@ package com.merchant;
 
 import com.merchant.offer.domain.Offer;
 import com.merchant.offer.service.OfferService;
+import com.merchant.util.OfferUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,14 +18,16 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
@@ -78,12 +81,12 @@ public class MerchantApplicationTests {
                 get("/merchant/offers").accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(jsonPath("$.offerList", hasSize(3)));
+                .andExpect(jsonPath("$", hasSize(3)));
 
     }
 
     @Test
-    public void getOffer() throws Exception {
+    public void getAnOffer() throws Exception {
 
         mockMvc.perform(
                 get("/merchant/offers/" + offer3Id).accept(MediaType.APPLICATION_JSON_VALUE))
@@ -94,7 +97,7 @@ public class MerchantApplicationTests {
     }
 
     @Test
-    public void createOffer() throws Exception {
+    public void createAnOffer() throws Exception {
 
         String offerId = UUID.randomUUID().toString();
 
@@ -125,8 +128,7 @@ public class MerchantApplicationTests {
     }
 
     @Test
-    public void cancelOffer() throws Exception {
-
+    public void cancelAnOffer() throws Exception {
 
         mockMvc.perform(
                 get("/merchant/offers/" + offer3Id).accept(MediaType.APPLICATION_JSON_VALUE))
@@ -135,17 +137,106 @@ public class MerchantApplicationTests {
                 .andExpect(jsonPath("$.offerName", is("3 Year Interest Free")))
                 .andExpect(jsonPath("$.offerExpired", is(false)));
 
-       mockMvc.perform(
-                put("/merchant/offers/" + offer3Id))
+
+        String json_data = "{" + "\"offerId\":\"" + offer3Id + "\"" + "}";
+
+        mockMvc.perform(
+                put("/merchant/offers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json_data)
+        )
                 .andExpect(status().isNoContent());
 
-
-       /* mockMvc.perform(
+        mockMvc.perform(
                 get("/merchant/offers/" + offer3Id).accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(jsonPath("$.offerName", is("3 Year Interest Free")))
-                .andExpect(jsonPath("$.offerExpired", is(true)));*/
+                .andExpect(jsonPath("$.offerExpired", is(true)))
+                .andExpect(jsonPath("$.comment", is("This offer has expired")));
 
     }
+
+    @Test
+    public void offerExpiredIn3daysFromCreation() throws Exception {
+
+        String offerId = UUID.randomUUID().toString();
+        int offerExpirationInDays = 3;
+
+        String json_data = "{\n" +
+                "  \"offerId\": \"" + offerId + "\",\n" +
+                "  \"offerName\": \"3 Year Interest Free\",\n" +
+                "  \"offerDescription\": \"Get Interest free for five years\",\n" +
+                "  \"offerCurrency\": \"EUR\",\n" +
+                "  \"offerDuration\": \"" + offerExpirationInDays + "\",\n" +
+                "  \"offerExpired\": false\n" +
+                "}";
+
+        mockMvc.perform(
+                post("/merchant/offers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json_data)
+        )
+                .andExpect(status().isNoContent());
+
+
+        mockMvc.perform(
+                get("/merchant/offers/" + offerId).accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.offerName", is("3 Year Interest Free")))
+                .andExpect(jsonPath("$.offerId", is(offerId)))
+                .andExpect(jsonPath("$.offerExpirationDate", is(OfferUtils.dateFormat(Date.from(LocalDateTime.now().plusDays(offerExpirationInDays).atZone(ZoneId.systemDefault()).toInstant())))));
+    }
+
+    @Test
+    public void deleteAnOffer() throws Exception {
+
+        mockMvc.perform(
+                get("/merchant/offers").accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$", hasSize(3)));
+
+        mockMvc.perform(
+                delete("/merchant/offers/" + offer3Id))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(
+                get("/merchant/offers/").accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        mockMvc.perform(
+                get("/merchant/offers/" + offer3Id).accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isNotFound());
+
+
+    }
+
+    @Test
+    public void invalidOfferCurrency() throws Exception {
+
+        String offerId = UUID.randomUUID().toString();
+
+        String json_data = "{\n" +
+                "  \"offerId\": \"" + offerId + "\",\n" +
+                "  \"offerName\": \"3 Year Interest Free\",\n" +
+                "  \"offerDescription\": \"Get Interest free for five years\",\n" +
+                "  \"offerCurrency\": \"CHF\",\n" +
+                "  \"offerExpiration\": 10,\n" +
+                "  \"offerExpired\": false\n" +
+                "}";
+
+        mockMvc.perform(
+                post("/merchant/offers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json_data)
+        )       .andExpect(status().isBadRequest());
+    }
+
+
+
+
 }
